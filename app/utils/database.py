@@ -1,9 +1,13 @@
 from bson.objectid import ObjectId
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 class Database:
     def __init__(self, db_name: str):
-        self.__client = MongoClient('mongodb://localhost:27017')
+        self.__client = MongoClient(os.environ.get('DB_URL'))
         self.__db = self.__client[db_name]        
         self.__collection = None
 
