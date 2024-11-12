@@ -8,7 +8,9 @@ users = db.set_collection("users")
 
 @router.get("/", response_model=User)
 async def get_user(user: User = Depends(get_current_user)):
-    return user.dict()
+    user_dict = user.dict()
+    user_dict['_id'] = user_dict.pop('id')
+    return user_dict
 
 @router.put("/", response_model=User)
 async def update_user(user: User = Depends(get_current_user), updated_details: User = None):

@@ -5,7 +5,6 @@ from app.db import db
 from app.auth.password import (
     get_hashed_password,
     create_access_token,
-    # create_refresh_token,
     verify_password
 )
 
@@ -37,7 +36,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
         )
     
     # Create the access token
-    access_token = create_access_token(subject=user['_id'])
+    access_token = create_access_token(subject=str(user['_id']))
     
     # Set the token in a secure HTTP-only cookie
     response.set_cookie(
