@@ -12,7 +12,7 @@ class Database:
         return self
 
     def insert(self, doc: dict):
-        if not self.__collection:
+        if self.__collection is None:
             raise Exception("Collection not set")
 
         doc['_id'] = ObjectId()
@@ -26,17 +26,17 @@ class Database:
         return list(self.__collection.find())
 
     def get(self, query):
-        if not self.__collection:
+        if self.__collection is None:
             raise Exception("Collection not set")
         return self.__collection.find_one(query)
 
     def update(self, get_q, set_q):
-        if not self.__collection:
+        if self.__collection is None:
             raise Exception("Collection not set")
         return self.__collection.update_one(get_q, {'$set': set_q})
 
     def delete(self, query):
-        if not self.__collection:
+        if self.__collection is None:
             raise Exception("Collection not set")
         return self.__collection.delete_one(query)
 
