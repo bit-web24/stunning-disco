@@ -1,16 +1,24 @@
-from typing import Union, Any
-from datetime import datetime
-from bson import ObjectId
+import os
+from typing import Union, Any, Optional
+from datetime import datetime, timedelta, timezone
+from bson.objectid import ObjectId
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-import os
 from jose import jwt
 from pydantic import ValidationError
 from app.models.user import User
 from app.models.token import TokenPayload
-from app.db import db
+from app.database import users
+from dotenv import load_dotenv
 
-users = db.set_collection("users")
+load_dotenv()
+
+def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    expire = datetime.now(tz=timezone.utc) + (expires_delta if expires_delta else timedelta(minutes=int(os.environ.get('ACCESS_TOKEN_EXPIRE_MINUTES'))))
+    to_encode = {"exp": expire, "sub": str(subject)}
+    encoded_jwt = jwt.encode(to_encode, os.environ.get('JWT_SECRET_KEY'), algorithm=os.environ.get('ALGORITHM'))
+    return encoded_jwt
+
 
 reuseable_oauth = OAuth2PasswordBearer(
     tokenUrl="/auth/login",
@@ -37,7 +45,7 @@ async def get_current_user(token: str = Depends(reuseable_oauth)) -> User:
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = users.get({'_id': ObjectId(token_data.sub)})
+    user = users.find_one({'_id': ObjectId(token_data.sub)})
 
     if user is None:
         raise HTTPException(

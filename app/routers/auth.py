@@ -1,32 +1,31 @@
 from fastapi import APIRouter, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.models.user import User, UserAuth
-from app.db import db
+from app.database import users
 from app.auth.password import (
     get_hashed_password,
-    create_access_token,
     verify_password
 )
+from app.auth.deps import create_access_token
 
 router = APIRouter()
-users = db.set_collection('users')
 
 @router.post('/signup', summary="Create new user", response_model=User)
 async def create_user(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = users.get({'username' : form_data.username})
+    user = users.find_one({'username' : form_data.username})
     if user is not None:
             raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exist"
         )
     user = UserAuth(username=form_data.username, password=get_hashed_password(form_data.password))
-    user = users.insert(user.dict())
+    user = users.insert_one(user.dict())
     user['_id'] = str(user['_id'])
     return user
 
 @router.post('/login', summary="Create access and refresh tokens for user")
 async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = users.get({'username' : form_data.username})
+    user = users.find_one({'username' : form_data.username})
     
     if not user or not verify_password(form_data.password, user['password']):
         raise HTTPException(
