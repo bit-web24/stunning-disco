@@ -45,7 +45,7 @@ async def update_user(updated_details: UserDetails, response: Response, user: Us
             new_access_token = create_access_token(subject=str(updated_user['_id']))
             response.set_cookie(
                 key="access_token",
-                value=new_access_token,
+                value=f"Bearer {new_access_token}",
                 httponly=True,
                 secure=True,
                 samesite="Lax",

@@ -40,7 +40,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
     
     response.set_cookie(
         key="access_token",
-        value=access_token,
+        value=f"Bearer {access_token}",
         httponly=True,
         secure=True,
         samesite="Lax",
