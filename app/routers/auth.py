@@ -6,6 +6,7 @@ from app.auth.password import (
     get_hashed_password,
     verify_password
 )
+from bson.objectid import ObjectId
 from app.auth.deps import create_access_token
 
 router = APIRouter()
@@ -18,10 +19,11 @@ async def create_user(form_data: OAuth2PasswordRequestForm = Depends()):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exist"
         )
-    user = UserAuth(username=form_data.username, password=get_hashed_password(form_data.password))
-    user = users.insert_one(user.dict())
+    user_auth = UserAuth(username=form_data.username, password=get_hashed_password(form_data.password))
+    user = users.insert_one(user_auth.model_dump())
+    user = users.find_one({'_id': ObjectId(user.inserted_id)})
     user['_id'] = str(user['_id'])
-    return user
+    return User(**user)
 
 @router.post('/login', summary="Create access and refresh tokens for user")
 async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
