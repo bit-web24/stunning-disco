@@ -16,3 +16,9 @@ class User(BaseModel):
 class UserAuth(BaseModel):
     username: str
     password: str
+
+class UserDetails(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None

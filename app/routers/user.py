@@ -1,24 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from app.auth.deps import create_access_token, get_current_user
 from app.auth.password import get_hashed_password
-from app.models.user import User
+from app.models.user import User, UserDetails
 from app.database import users
 from bson.objectid import ObjectId
 
 router = APIRouter()
 
-@router.get("/", response_model=User)
+@router.get("/", response_model=UserDetails)
 async def get_user(user: User = Depends(get_current_user)):
     try:
-        return user
+        return users.find_one({'_id': ObjectId(user.id)})
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving user data"
         )
 
-@router.put("/", response_model=User)
-async def update_user(updated_details, user: User = Depends(get_current_user), response: Response = None):
+@router.put("/", response_model=UserDetails)
+async def update_user(updated_details: UserDetails, response: Response, user: User = Depends(get_current_user)):
     try:
         if not updated_details:
             raise HTTPException(
@@ -27,11 +27,13 @@ async def update_user(updated_details, user: User = Depends(get_current_user), r
             )
         
         updated_data = updated_details.model_dump(exclude_unset=True)
+        print(updated_data)
 
         if 'password' in updated_data:
             updated_data['password'] = get_hashed_password(updated_data['password'])
 
-        updated_user = users.find_one_and_update({'_id': user.id}, {"$set": updated_data}, return_document=True)
+        updated_user = users.find_one_and_update({'_id': ObjectId(user.id)}, {"$set": updated_data}, return_document=True)
+        print(updated_user)
 
         if not updated_user:
             raise HTTPException(
@@ -51,7 +53,7 @@ async def update_user(updated_details, user: User = Depends(get_current_user), r
             )
 
         updated_user['_id'] = str(updated_user['_id'])
-        return User(**updated_user)
+        return UserDetails(**updated_user)
     except HTTPException as http_exc:
         raise http_exc
     except Exception:

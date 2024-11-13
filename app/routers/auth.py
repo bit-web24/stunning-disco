@@ -17,7 +17,7 @@ async def create_user(form_data: OAuth2PasswordRequestForm = Depends()):
     if user is not None:
             raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email already exist"
+            detail="User with this username already exist"
         )
     user_auth = UserAuth(username=form_data.username, password=get_hashed_password(form_data.password))
     user = users.insert_one(user_auth.model_dump())
