@@ -36,20 +36,17 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create the access token
     access_token = create_access_token(subject=str(user['_id']))
     
-    # Set the token in a secure HTTP-only cookie
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         secure=True,
         samesite="Lax",
-        max_age=1800  # Optional: max-age for cookie (in seconds)
+        max_age=1800
     )
 
-    # Optional: return a success message or user data
     return {"message": "Login successful"}
 
 @router.get('/logout')
