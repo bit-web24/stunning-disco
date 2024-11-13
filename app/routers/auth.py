@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Response, status, HTTPException, Depends
+from fastapi import APIRouter, Response, status, HTTPException, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from app.models.user import User, UserAuth
+from app.models.token import TokenSchema
 from app.database import users
 from app.auth.password import (
     get_hashed_password,
@@ -40,7 +41,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
     
     response.set_cookie(
         key="access_token",
-        value=f"Bearer {access_token}",
+        value=access_token,
         httponly=True,
         secure=True,
         samesite="Lax",
@@ -51,6 +52,17 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
 
 @router.get('/logout')
 async def logout(response: Response):
-    response.delete_cookie(key="access_token")
-    return {"message": "Logout successful"}
+    try:
+        response.delete_cookie(key="access_token")
+        return {"message": "Logout successful"}
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error logging out"
+        )
 
+
+@router.post('/token', summary="get access token", response_model=TokenSchema)
+async def get_token(request: Request):
+    access_token = request.cookies.get('access_token')
+    return {"access_token": access_token, "token_type": "bearer"}

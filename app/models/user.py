@@ -1,5 +1,5 @@
 from bson.objectid import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 class User(BaseModel):
@@ -20,5 +20,5 @@ class UserAuth(BaseModel):
 class UserDetails(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     password: Optional[str] = None

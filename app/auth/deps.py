@@ -21,7 +21,7 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
 
 
 reuseable_oauth = OAuth2PasswordBearer(
-    tokenUrl="/auth/login",
+    tokenUrl="/auth/token",
     scheme_name="JWT"
 )
 

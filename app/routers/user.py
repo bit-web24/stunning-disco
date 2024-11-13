@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import Optional
+from fastapi import APIRouter, Depends, Form, HTTPException, status, Response
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import EmailStr
 from app.auth.deps import create_access_token, get_current_user
 from app.auth.password import get_hashed_password
 from app.models.user import User, UserDetails
@@ -18,22 +21,36 @@ async def get_user(user: User = Depends(get_current_user)):
         )
 
 @router.put("/", response_model=UserDetails)
-async def update_user(updated_details: UserDetails, response: Response, user: User = Depends(get_current_user)):
+async def update_user(
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    email: Optional[EmailStr] = Form(None),
+    password: Optional[str] = Form(None),
+    response: Response = None,
+    user: User = Depends(get_current_user)
+):
     try:
-        if not updated_details:
+        updated_data = {}
+        if first_name is not None:
+            updated_data['first_name'] = first_name
+        if email is not None:
+            updated_data['email'] = str(email)
+        if last_name is not None:
+            updated_data['last_name'] = last_name
+        if password is not None:
+            updated_data['password'] = get_hashed_password(password)
+
+        if not updated_data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No updated details provided"
             )
-        
-        updated_data = updated_details.model_dump(exclude_unset=True)
-        print(updated_data)
 
-        if 'password' in updated_data:
-            updated_data['password'] = get_hashed_password(updated_data['password'])
-
-        updated_user = users.find_one_and_update({'_id': ObjectId(user.id)}, {"$set": updated_data}, return_document=True)
-        print(updated_user)
+        updated_user = users.find_one_and_update(
+            {'_id': ObjectId(user.id)}, 
+            {"$set": updated_data}, 
+            return_document=True
+        )
 
         if not updated_user:
             raise HTTPException(
@@ -41,11 +58,11 @@ async def update_user(updated_details: UserDetails, response: Response, user: Us
                 detail="User not found after update"
             )
 
-        if 'password' in updated_data:
+        if password is not None:
             new_access_token = create_access_token(subject=str(updated_user['_id']))
             response.set_cookie(
                 key="access_token",
-                value=f"Bearer {new_access_token}",
+                value=new_access_token,
                 httponly=True,
                 secure=True,
                 samesite="Lax",
@@ -56,7 +73,8 @@ async def update_user(updated_details: UserDetails, response: Response, user: Us
         return UserDetails(**updated_user)
     except HTTPException as http_exc:
         raise http_exc
-    except Exception:
+    except Exception as e:
+        print(f"Error updating user: {str(e)}")  # For debugging
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error updating user data"
